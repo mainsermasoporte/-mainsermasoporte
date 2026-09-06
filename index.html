@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToolBox Pro - Equipo y Herramientas de Mantenimiento</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Encabezado con Título Centrado y Buscador -->
+    <header>
+        <div class="logo">MANTENIMIENTO</div>
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Buscar herramienta, soplete, grasa..." onkeyup="filtrarProductos()">
+        </div>
+    </header>
+
+    <!-- Menú de Categorías Principales -->
+    <nav class="categories-nav" id="mainCategories">
+        <button class="cat-btn active" onclick="seleccionarCategoria('todos', this)">🗂️ Todo el Catálogo</button>
+        <button class="cat-btn" onclick="seleccionarCategoria('Herramientas y Equipo', this)">🔧 Herramientas</button>
+        <button class="cat-btn" onclick="seleccionarCategoria('Consumos y Soldadura', this)">🔥 Consumibles y Gas</button>
+        <button class="cat-btn" onclick="seleccionarCategoria('Lubricación y Químicos', this)">🛢️ Lubricantes</button>
+        <button class="cat-btn" onclick="seleccionarCategoria('Medición y Diagnóstico', this)">⚡ Instrumentos</button>
+        <button class="cat-btn" onclick="seleccionarCategoria('Seguridad Industrial', this)">🛡️ EPP y Seguridad</button>
+    </nav>
+
+    <!-- Contenedor de Subcategorías Dinámicas -->
+    <div class="subcategories-bar" id="subcategoriesContainer"></div>
+
+    <!-- Contenido Principal -->
+    <main>
+        <h1 class="section-title" id="sectionTitle">Equipamiento Profesional y Consumibles de Uso Rudo</h1>
+
+        <div class="products-grid" id="productsGrid"></div>
+    </main>
+
+    <!-- Pie de Página con Aviso Legal OBLIGATORIO para Amazon -->
+    <footer>
+        <p><strong>Aviso de Divulgación:</strong> En calidad de Afiliado de Amazon, obtengo ingresos por las compras adscritas que cumplen los requisitos aplicables. Esto no representa ningún costo adicional para ti.</p>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
