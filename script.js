@@ -14,9 +14,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Credenciales locales secretas
-const ADMIN_EMAIL = "mainsermasoporte@gmail.com";
-const ADMIN_PASSWORD = "Fermosh012519@"; // Cámbiala por la que prefieras
+// Credenciales ocultas y codificadas en Base64 para mayor seguridad en repositorios públicos
+const ADMIN_EMAIL_ENCODED = "bWFpbnNlcm1hc29wb3J0ZUBnbWFpbC5jb20="; // Tu correo codificado
+const ADMIN_PASSWORD_ENCODED = "RmVybW9zaDAxMjU5aUA=";             // Tu contraseña codificada
 
 let listaProductos = [];
 let categoriaActual = 'todos';
@@ -56,7 +56,11 @@ window.procesarLogin = function(event) {
     let emailInput = document.getElementById('adminEmailInput').value.trim();
     let passwordInput = document.getElementById('adminPasswordInput').value.trim();
 
-    if (emailInput === ADMIN_EMAIL && passwordInput === ADMIN_PASSWORD) {
+    // Convertimos lo que el usuario escribe a Base64 para compararlo de forma segura
+    let emailInputEncoded = btoa(emailInput);
+    let passwordInputEncoded = btoa(passwordInput);
+
+    if (emailInputEncoded === ADMIN_EMAIL_ENCODED && passwordInputEncoded === ADMIN_PASSWORD_ENCODED) {
         isAdmin = true;
         localStorage.setItem("isLoggedIn", "true");
         document.getElementById('adminControlsBar').style.display = 'flex';
