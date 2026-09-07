@@ -56,7 +56,6 @@ window.procesarLogin = function(event) {
     let emailInput = document.getElementById('adminEmailInput').value.trim();
     let passwordInput = document.getElementById('adminPasswordInput').value.trim();
 
-    // Convertimos lo que el usuario escribe a Base64 para compararlo de forma segura
     let emailInputEncoded = btoa(emailInput);
     let passwordInputEncoded = btoa(passwordInput);
 
@@ -69,7 +68,6 @@ window.procesarLogin = function(event) {
         `;
         cerrarModalLogin();
         mostrarProductos(listaProductos);
-        alert("¡Bienvenido, Administrador!");
     } else {
         alert("Correo o contraseña incorrectos.");
     }
@@ -84,7 +82,6 @@ window.cerrarSesionAdmin = function() {
     `;
     cerrarModalPublicar();
     mostrarProductos(listaProductos);
-    alert("Sesión cerrada correctamente.");
 }
 
 // Control del Modal de Publicación
