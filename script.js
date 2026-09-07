@@ -187,7 +187,7 @@ async function obtenerDatosDesdeEnlace(link) {
             desc: meta.description || meta.descriptionText || datosBase.desc
         };
     } catch (error) {
-        console.warn('No se pudieron leer los metadatos del enlace:', error);
+        console.warn('No se pudieron leer los datos del enlace:', error);
         return datosBase;
     }
 }
@@ -231,7 +231,7 @@ window.eliminarProducto = async function(id) {
 
 function generarFiltrosDinamicos() {
     let nav = document.getElementById('mainCategories');
-    nav.innerHTML = `<button class="cat-btn ${categoriaActual === 'todos' ? 'active' : ''}" onclick="seleccionarCategoria('todos', this)">📁 Todo el Catálogo</button>`;
+    nav.innerHTML = `<button class="cat-btn ${categoriaActual === 'todos' ? 'active' : ''}" onclick="seleccionarCategoria('todos', this)">Catalogo Completo</button>`;
 
     let categoriasUnicas = [...new Set(listaProductos.map(p => p.categoria))];
     categoriasUnicas.forEach(cat => {
@@ -310,7 +310,7 @@ function mostrarProductos(lista) {
     lista.forEach(p => {
         let card = document.createElement('div');
         card.className = 'product-card';
-        let botonEliminarHTML = isAdmin ? `<button class="delete-btn" onclick="eliminarProducto('${p.id}')">🗑️ Eliminar Producto</button>` : '';
+        let botonEliminarHTML = isAdmin ? `<button class="delete-btn" onclick="eliminarProducto('${p.id}')">Eliminar Producto</button>` : '';
 
         card.innerHTML = `
             <div>
