@@ -127,18 +127,27 @@ window.cerrarModalPublicar = function() {
 
 window.publicarProductoAutomatico = async function(event) {
     event.preventDefault();
-    const inputLink = document.getElementById('linkProd');
-    if (!inputLink) return;
+    const inputFullLink = document.getElementById('fullLinkProd');
+    const inputAffiliateLink = document.getElementById('affiliateLinkProd');
+    if (!inputFullLink || !inputAffiliateLink) return;
 
-    const linkIngresado = inputLink.value.trim();
-    if (!linkIngresado) return;
+    const enlacePublico = inputFullLink.value.trim();
+    const enlaceAfiliado = inputAffiliateLink.value.trim();
+    if (!enlacePublico || !enlaceAfiliado) return;
 
     actualizarEstadoPublicacion(true);
 
     try {
-        const datosEnlace = await obtenerDatosDesdeEnlaceAmazon(linkIngresado);
+        const datosEnlace = await obtenerDatosDesdeEnlaceAmazon(enlacePublico);
         if (!datosEnlace.asin) {
-            alert('El enlace no contiene un ASIN válido. Usa un enlace largo de Amazon con /dp/ o /gp/product/.');
+            alert('El enlace no contiene un ASIN válido. Usa un enlace largo de Amazon.');
+            return;
+        }
+
+        try {
+            new URL(enlaceAfiliado);
+        } catch (error) {
+            alert('El enlace de afiliado no es válido.');
             return;
         }
 
@@ -150,7 +159,7 @@ window.publicarProductoAutomatico = async function(event) {
             rating: datosEnlace.rating,
             imagen: datosEnlace.imagen,
             desc: datosEnlace.desc,
-            link: linkIngresado,
+            link: enlaceAfiliado,
             fechaCreacion: new Date().toISOString()
         };
 
