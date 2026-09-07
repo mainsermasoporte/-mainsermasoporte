@@ -4,12 +4,13 @@ import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstati
 
 // TU CONFIGURACIÓN DE FIREBASE
 const firebaseConfig = {
-    apiKey: "TU_API_KEY",
-    authDomain: "TU_AUTH_DOMAIN",
-    projectId: "TU_PROJECT_ID",
-    storageBucket: "TU_STORAGE_BUCKET",
-    messagingSenderId: "TU_MESSAGING_SENDER_ID",
-    appId: "TU_APP_ID"
+  apiKey: "AIzaSyAHWhdNlRPaKWieyRCui-YlN2cG-I5M7oI",
+  authDomain: "produc-main.firebaseapp.com",
+  projectId: "produc-main",
+  storageBucket: "produc-main.firebasestorage.app",
+  messagingSenderId: "713702451891",
+  appId: "1:713702451891:web:d64445524ed37486cf9ec6",
+  measurementId: "G-2RZ15T4428"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -330,3 +331,4 @@ function mostrarProductos(lista) {
         grid.appendChild(card);
     });
 }
+
