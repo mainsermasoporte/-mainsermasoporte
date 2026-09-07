@@ -81,8 +81,12 @@
                     <label for="linkProd">Enlace largo de Amazon:</label>
                     <input type="url" id="linkProd" placeholder="https://www.amazon.com/.../dp/ASIN?tag=..." required>
                 </div>
+                <div id="publishStatus" class="publish-status" role="status" aria-live="polite" hidden>
+                    <span>Analizando producto...</span>
+                    <div class="publish-progress"><span></span></div>
+                </div>
                 <div class="modal-buttons">
-                    <button type="submit" class="btn-publicar">Publicar</button>
+                    <button type="submit" id="publishButton" class="btn-publicar">Publicar</button>
                     <button type="button" class="btn-cancelar" onclick="cerrarModalPublicar()">Cancelar</button>
                 </div>
             </form>
