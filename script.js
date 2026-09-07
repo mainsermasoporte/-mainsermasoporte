@@ -21,7 +21,6 @@ const PRODUCTOS_LOCALES_KEY = 'productosCatalogo';
 
 let listaProductos = [];
 let categoriaActual = 'todos';
-let subcategoriaActual = 'todos';
 let isAdmin = false;
 
 window.onload = function() {
@@ -315,44 +314,11 @@ function generarFiltrosDinamicos() {
         btn.onclick = () => seleccionarCategoria(cat, btn);
         nav.appendChild(btn);
     });
-    actualizarSubcategorias();
 }
 
 window.seleccionarCategoria = function(cat, elemento) {
     categoriaActual = cat;
-    subcategoriaActual = 'todos';
     document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-    elemento.classList.add('active');
-    actualizarSubcategorias();
-    aplicarFiltros();
-}
-
-function actualizarSubcategorias() {
-    let subContainer = document.getElementById('subcategoriesContainer');
-    subContainer.innerHTML = '';
-    if (categoriaActual === 'todos') return;
-
-    let subcategoriasUnicas = [...new Set(listaProductos.filter(p => p.categoria === categoriaActual).map(p => p.subcategoria))];
-    if (subcategoriasUnicas.length > 0) {
-        let btnTodas = document.createElement('button');
-        btnTodas.className = `sub-btn ${subcategoriaActual === 'todos' ? 'active' : ''}`;
-        btnTodas.innerText = '✨ Todas';
-        btnTodas.onclick = () => filtrarPorSubcategoria('todos', btnTodas);
-        subContainer.appendChild(btnTodas);
-
-        subcategoriasUnicas.forEach(sub => {
-            let btn = document.createElement('button');
-            btn.className = `sub-btn ${subcategoriaActual === sub ? 'active' : ''}`;
-            btn.innerText = sub;
-            btn.onclick = () => filtrarPorSubcategoria(sub, btn);
-            subContainer.appendChild(btn);
-        });
-    }
-}
-
-window.filtrarPorSubcategoria = function(sub, elemento) {
-    subcategoriaActual = sub;
-    document.querySelectorAll('.sub-btn').forEach(b => b.classList.remove('active'));
     elemento.classList.add('active');
     aplicarFiltros();
 }
@@ -365,9 +331,8 @@ function aplicarFiltros() {
     let textoBusqueda = document.getElementById('searchInput').value.toLowerCase();
     let filtrados = listaProductos.filter(p => {
         let coincideCategoria = (categoriaActual === 'todos' || p.categoria === categoriaActual);
-        let coincideSubcategoria = (subcategoriaActual === 'todos' || p.subcategoria === subcategoriaActual);
         let coincideTexto = p.nombre.toLowerCase().includes(textoBusqueda) || p.desc.toLowerCase().includes(textoBusqueda);
-        return coincideCategoria && coincideSubcategoria && coincideTexto;
+        return coincideCategoria && coincideTexto;
     });
     mostrarProductos(filtrados);
 }
