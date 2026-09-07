@@ -238,24 +238,37 @@ header {
     box-sizing: border-box;
 }
 
-.password-field {
+.input-group {
     position: relative;
     display: flex;
     align-items: center;
 }
 
-.password-field input {
+.input-group input {
     padding-right: 44px;
 }
 
-.password-toggle {
+.input-group > .fa-lock {
     position: absolute;
-    right: 8px;
-    border: 0;
-    background: transparent;
+    left: 12px;
+    color: #9ca3af;
+    z-index: 1;
+}
+
+.input-group input {
+    padding-left: 36px;
+}
+
+.input-group i.toggle-password {
+    position: absolute;
+    left: auto;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    font-size: 1rem;
     cursor: pointer;
-    padding: 6px;
-    line-height: 1;
+    z-index: 10;
 }
 
 .modal-buttons {
