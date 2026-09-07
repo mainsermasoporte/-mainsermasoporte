@@ -238,6 +238,26 @@ header {
     box-sizing: border-box;
 }
 
+.password-field {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-field input {
+    padding-right: 44px;
+}
+
+.password-toggle {
+    position: absolute;
+    right: 8px;
+    border: 0;
+    background: transparent;
+    cursor: pointer;
+    padding: 6px;
+    line-height: 1;
+}
+
 .modal-buttons {
     display: flex;
     gap: 10px;
