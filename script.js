@@ -15,8 +15,8 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // Credenciales ocultas y protegidas (nadie las verá en texto plano)
-const ADMIN_EMAIL_ENC = "bWFpbnNlcm1hc29wb3J0ZUBnbWFpbC5jb20="; 
-const ADMIN_PASS_ENC = "RmVybW9zaDAxMjUxOSU0MA=="; // Versión segura codificada
+const ADMIN_EMAIL_ENC = "mainsermasoporte@gmail.com"; 
+const ADMIN_PASS_ENC = "Fermosh012519@";
 
 let listaProductos = [];
 let categoriaActual = 'todos';
