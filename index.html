@@ -78,8 +78,8 @@
             <h3>Publicar Producto</h3>
             <form id="productForm" onsubmit="publicarProductoAutomatico(event)">
                 <div class="form-group">
-                    <label for="productHtml">Código HTML del producto:</label>
-                    <textarea id="productHtml" rows="8" placeholder="Pega aquí el código HTML del producto" required></textarea>
+                    <label for="linkProd">Enlace largo de Amazon:</label>
+                    <input type="url" id="linkProd" placeholder="https://www.amazon.com/.../dp/ASIN?tag=..." required>
                 </div>
                 <div class="modal-buttons">
                     <button type="submit" class="btn-publicar">Publicar</button>
@@ -92,4 +92,3 @@
     <script type="module" src="script.js"></script>
 </body>
 </html>
-
