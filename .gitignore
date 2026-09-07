@@ -5,3 +5,5 @@ node_modules/
 # Si tienes archivos con contraseñas locales o configuraciones privadas de respaldo, ponlos aquí:
 config.secret.js
 .env
+.env.*
+firebase-config.local.js
