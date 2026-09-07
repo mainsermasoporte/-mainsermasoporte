@@ -27,16 +27,68 @@ header {
     padding: 20px 30px;
     display: flex;
     flex-direction: column;
-    align-items: center;
     gap: 15px;
+    position: relative;
+}
+
+.header-top {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    width: 100%;
 }
 
 .logo {
     font-size: 26px;
     font-weight: bold;
     color: var(--primary-color);
-    text-align: center;
     letter-spacing: 2px;
+    text-align: center;
+}
+
+/* Botón del engranaje o cerrar sesión ubicado en la esquina derecha superior */
+.admin-access-btn {
+    background: #232f3e;
+    border: 1px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: 0.2s;
+    position: absolute;
+    right: 0;
+}
+
+.admin-access-btn:hover {
+    background: var(--primary-color);
+    color: var(--dark-color);
+}
+
+.logout-btn-header {
+    background: #dc3545;
+    border: none;
+    color: white;
+    padding: 8px 14px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+    position: absolute;
+    right: 0;
+    transition: 0.2s;
+}
+
+.logout-btn-header:hover {
+    background: #c82333;
+}
+
+/* Contenedor para centrar la barra de búsqueda */
+.search-container-center {
+    display: flex;
+    justify-content: center;
+    width: 100%;
 }
 
 .search-box {
@@ -45,7 +97,7 @@ header {
     border-radius: 5px;
     overflow: hidden;
     width: 100%;
-    max-width: 450px;
+    max-width: 500px;
 }
 
 .search-box input {
@@ -84,7 +136,7 @@ header {
     font-weight: bold;
 }
 
-/* Barra de Subcategorías Dinámicas */
+/* Barra de Subcategorías */
 .subcategories-bar {
     max-width: 1200px;
     margin: 20px auto 0 auto;
@@ -111,7 +163,33 @@ header {
     border-color: var(--dark-color);
 }
 
-/* Contenedor principal */
+/* Barra de controles del Administrador (Botón Publicar al lado opuesto del cerrar sesión) */
+.admin-controls-bar {
+    max-width: 1200px;
+    margin: 0 auto 20px auto;
+    display: flex;
+    justify-content: flex-start; /* Al lado contrario de la esquina derecha */
+}
+
+/* Botón "Publicar" estilizado y limpio */
+.open-modal-publish-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: background 0.2s;
+}
+
+.open-modal-publish-btn:hover {
+    background: #218838;
+}
+
+/* Contenido Principal */
 main {
     max-width: 1200px;
     margin: 20px auto 40px auto;
@@ -141,10 +219,7 @@ main {
     flex-direction: column;
     justify-content: space-between;
     transition: transform 0.2s;
-}
-
-.product-card:hover {
-    transform: translateY(-5px);
+    position: relative;
 }
 
 .product-img {
@@ -181,7 +256,14 @@ main {
 .product-name {
     font-size: 17px;
     font-weight: bold;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
+}
+
+.product-price {
+    font-size: 16px;
+    font-weight: bold;
+    color: #B12704;
+    margin-bottom: 4px;
 }
 
 .product-rating {
@@ -207,10 +289,146 @@ main {
     font-weight: bold;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     transition: background 0.2s;
+    margin-bottom: 8px;
 }
 
 .amazon-btn:hover {
     background-color: #f7ca00;
+}
+
+.delete-btn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 6px;
+    border-radius: 5px;
+    font-size: 12px;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 5px;
+}
+
+.delete-btn:hover {
+    background: #c82333;
+}
+
+/* Modales (Ventanas Emergentes) */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+
+.modal-content input {
+    width: 100%;
+    padding: 10px;
+    margin: 15px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.confirm-btn {
+    background: var(--primary-color);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.cancel-btn {
+    background: #ccc;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* Estilos específicos para la ventana compacta de Publicar */
+.publish-modal-content {
+    max-width: 420px;
+    text-align: left;
+    padding: 20px 25px;
+}
+
+.modal-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.modal-header-row h3 {
+    font-size: 17px;
+    color: var(--dark-color);
+}
+
+.close-x-btn {
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #666;
+}
+
+.close-x-btn:hover {
+    color: #000;
+}
+
+.modal-sub {
+    font-size: 12px;
+    color: var(--gray-text);
+    margin-bottom: 12px;
+}
+
+.modal-url-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 14px;
+    margin-bottom: 12px;
+    outline: none;
+}
+
+.publish-btn-clean {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 10px;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.2s;
+}
+
+.publish-btn-clean:hover {
+    background: #218838;
 }
 
 /* Pie de página */
