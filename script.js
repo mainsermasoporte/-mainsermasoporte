@@ -126,10 +126,14 @@ window.cerrarModalPublicar = function() {
 
 window.publicarProductoAutomatico = async function(event) {
     event.preventDefault();
-    let linkIngresado = document.getElementById('linkProd').value.trim();
-    if (!linkIngresado) return;
+    const codigoProducto = document.getElementById('productHtml').value.trim();
+    if (!codigoProducto) return;
 
-    const datosEnlace = await obtenerDatosDesdeEnlace(linkIngresado);
+    const datosEnlace = obtenerDatosDesdeHtml(codigoProducto);
+    if (!datosEnlace.link) {
+        alert('El código HTML debe contener un enlace al producto.');
+        return;
+    }
     const productoGenerado = {
         nombre: datosEnlace.nombre,
         categoria: "Herramientas",
@@ -138,7 +142,7 @@ window.publicarProductoAutomatico = async function(event) {
         rating: datosEnlace.rating,
         imagen: datosEnlace.imagen,
         desc: datosEnlace.desc,
-        link: linkIngresado,
+        link: datosEnlace.link,
         fechaCreacion: new Date().toISOString()
     };
 
@@ -159,37 +163,28 @@ window.publicarProductoAutomatico = async function(event) {
     }
 }
 
-async function obtenerDatosDesdeEnlace(link) {
-    const url = new URL(link);
-    const asin = url.pathname.match(/(?:dp|gp\/product|product)\/([A-Z0-9]{10})/i)?.[1]?.toUpperCase();
-    const datosBase = {
-        nombre: asin ? `Producto Amazon ${asin}` : 'Producto compartido',
-        imagen: asin
-            ? `https://images-na.ssl-images-amazon.com/images/P/${asin}.01.LZZZZZZZ.jpg`
-            : 'https://placehold.co/600x400/f1f3f5/495057?text=Producto',
-        desc: asin
-            ? 'Producto importado desde el enlace de Amazon. Revisa la ficha original para consultar sus detalles actualizados.'
-            : 'Producto agregado desde un enlace externo.',
-        precio: 'Consultar en el sitio original',
+function obtenerDatosDesdeHtml(codigoHtml) {
+    const documento = new DOMParser().parseFromString(codigoHtml, 'text/html');
+    const enlace = documento.querySelector('a[href]');
+    const imagen = documento.querySelector('img[src]');
+    const textos = [...documento.querySelectorAll('p')]
+        .map(elemento => elemento.textContent.trim())
+        .filter(Boolean);
+    const precioEncontrado = textos.find(texto => /[$€£]|\d+[.,]\d{2}/.test(texto));
+    const nombre = textos.find(texto => texto !== precioEncontrado && !/comprar|ver producto/i.test(texto))
+        || imagen?.getAttribute('alt')?.trim()
+        || 'Producto compartido';
+
+    return {
+        link: enlace?.href || '',
+        nombre,
+        imagen: imagen?.src || 'https://placehold.co/600x400/f1f3f5/495057?text=Producto',
+        desc: textos
+            .filter(texto => texto !== nombre && texto !== precioEncontrado && !/comprar|ver producto/i.test(texto))
+            .join(' ') || nombre,
+        precio: precioEncontrado || 'Consultar en el sitio original',
         rating: 'Calificación disponible en el sitio original'
     };
-
-    try {
-        const respuesta = await fetch(`https://api.microlink.io?url=${encodeURIComponent(link)}&meta=true`);
-        if (!respuesta.ok) return datosBase;
-        const resultado = await respuesta.json();
-        const meta = resultado.data?.metadata || {};
-        const imagenMeta = typeof meta.image === 'string' ? meta.image : meta.image?.url;
-        return {
-            ...datosBase,
-            nombre: meta.title || datosBase.nombre,
-            imagen: imagenMeta || datosBase.imagen,
-            desc: meta.description || meta.descriptionText || datosBase.desc
-        };
-    } catch (error) {
-        console.warn('No se pudieron leer los datos del enlace:', error);
-        return datosBase;
-    }
 }
 
 async function cargarProductosDesdeFirebase() {
@@ -231,7 +226,7 @@ window.eliminarProducto = async function(id) {
 
 function generarFiltrosDinamicos() {
     let nav = document.getElementById('mainCategories');
-    nav.innerHTML = `<button class="cat-btn ${categoriaActual === 'todos' ? 'active' : ''}" onclick="seleccionarCategoria('todos', this)">Catalogo Completo</button>`;
+    nav.innerHTML = `<button class="cat-btn ${categoriaActual === 'todos' ? 'active' : ''}" onclick="seleccionarCategoria('todos', this)">📁 Todo el Catálogo</button>`;
 
     let categoriasUnicas = [...new Set(listaProductos.map(p => p.categoria))];
     categoriasUnicas.forEach(cat => {
@@ -324,11 +319,10 @@ function mostrarProductos(lista) {
                 <p style="font-size: 13px; color: #555; line-height: 1.4;">${p.desc}</p>
             </div>
             <div>
-                <a href="${p.link}" target="_blank" class="amazon-btn">Ver en Amazon</a>
+                <a href="${p.link}" target="_blank" rel="noopener noreferrer" class="amazon-btn">Ver producto</a>
                 ${botonEliminarHTML}
             </div>
         `;
         grid.appendChild(card);
     });
 }
-
