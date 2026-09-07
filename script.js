@@ -13,10 +13,12 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const usaFirebase = !Object.values(firebaseConfig).some(valor => valor.startsWith('TU_'));
+const PRODUCTOS_LOCALES_KEY = 'productosCatalogo';
 
-// Credenciales ocultas y protegidas (nadie las verá en texto plano)
-const ADMIN_EMAIL_ENC = "mainsermasoporte@gmail.com"; 
-const ADMIN_PASS_ENC = "Fermosh012519@";
+// Estas credenciales solo controlan la interfaz. Para seguridad real usa Firebase Auth.
+const ADMIN_EMAIL = "mainsermasoporte@gmail.com";
+const ADMIN_PASSWORD = "Fermosh012519@";
 
 let listaProductos = [];
 let categoriaActual = 'todos';
@@ -49,38 +51,32 @@ window.cerrarModalLogin = function() {
     document.getElementById('loginModal').style.display = 'none';
     document.getElementById('loginForm').reset();
     document.getElementById('adminPasswordInput').type = 'password';
-    document.getElementById('eyeBtn').innerText = '👁️';
+    const eyeButton = document.getElementById('eyeBtn');
+    eyeButton.innerText = '👁️';
+    eyeButton.setAttribute('aria-label', 'Mostrar contraseña');
 }
 
 // Función para el botón del "ojito"
 window.togglePasswordVisibility = function() {
-    let passwordInput = document.getElementById('adminPasswordInput');
-    let eyeBtn = document.getElementById('eyeBtn');
+    const passwordInput = document.getElementById('adminPasswordInput');
+    const eyeBtn = document.getElementById('eyeBtn');
     if (passwordInput.type === 'password') {
         passwordInput.type = 'text';
         eyeBtn.innerText = '🙈';
+        eyeBtn.setAttribute('aria-label', 'Ocultar contraseña');
     } else {
         passwordInput.type = 'password';
         eyeBtn.innerText = '👁️';
+        eyeBtn.setAttribute('aria-label', 'Mostrar contraseña');
     }
-}
-
-// Función auxiliar segura para codificar UTF-8 a Base64 sin errores
-function safeBtoa(str) {
-    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
-        return String.fromCharCode('0x' + p1);
-    }));
 }
 
 window.procesarLogin = function(event) {
     event.preventDefault();
-    let emailInput = document.getElementById('adminEmailInput').value.trim();
-    let passwordInput = document.getElementById('adminPasswordInput').value.trim();
+    const emailInput = document.getElementById('adminEmailInput').value.trim().toLowerCase();
+    const passwordInput = document.getElementById('adminPasswordInput').value;
 
-    let emailCodificado = safeBtoa(emailInput);
-    let passwordCodificada = safeBtoa(passwordInput);
-
-    if (emailCodificado === ADMIN_EMAIL_ENC && passwordCodificada === ADMIN_PASS_ENC) {
+    if (emailInput === ADMIN_EMAIL && passwordInput === ADMIN_PASSWORD) {
         isAdmin = true;
         localStorage.setItem("isLoggedIn", "true");
         document.getElementById('adminControlsBar').style.display = 'flex';
@@ -121,20 +117,27 @@ window.publicarProductoAutomatico = async function(event) {
     let linkIngresado = document.getElementById('linkProd').value.trim();
     if (!linkIngresado) return;
 
-    let productoGenerado = {
-        nombre: "Herramienta de Precisión Profesional",
+    const datosEnlace = await obtenerDatosDesdeEnlace(linkIngresado);
+    const productoGenerado = {
+        nombre: datosEnlace.nombre,
         categoria: "Herramientas",
         subcategoria: "Equipamiento Técnico",
-        precio: "US$39.99",
-        rating: "⭐ 4.8 / 5",
-        imagen: "https://m.media-amazon.com/images/I/71Vj6qT87vL._AC_SL1500_.jpg",
-        desc: "Equipamiento de alta durabilidad para labores profesionales.",
+        precio: datosEnlace.precio,
+        rating: datosEnlace.rating,
+        imagen: datosEnlace.imagen,
+        desc: datosEnlace.desc,
         link: linkIngresado,
         fechaCreacion: new Date().toISOString()
     };
 
     try {
-        await addDoc(collection(db, "productos"), productoGenerado);
+        if (usaFirebase) {
+            await addDoc(collection(db, "productos"), productoGenerado);
+        } else {
+            const productosLocales = JSON.parse(localStorage.getItem(PRODUCTOS_LOCALES_KEY) || '[]');
+            productosLocales.push({ id: crypto.randomUUID(), ...productoGenerado });
+            localStorage.setItem(PRODUCTOS_LOCALES_KEY, JSON.stringify(productosLocales));
+        }
         alert("¡Producto publicado correctamente!");
         cerrarModalPublicar();
         cargarProductosDesdeFirebase();
@@ -144,8 +147,46 @@ window.publicarProductoAutomatico = async function(event) {
     }
 }
 
+async function obtenerDatosDesdeEnlace(link) {
+    const url = new URL(link);
+    const asin = url.pathname.match(/(?:dp|gp\/product|product)\/([A-Z0-9]{10})/i)?.[1]?.toUpperCase();
+    const datosBase = {
+        nombre: asin ? `Producto Amazon ${asin}` : 'Producto compartido',
+        imagen: asin
+            ? `https://images-na.ssl-images-amazon.com/images/P/${asin}.01.LZZZZZZZ.jpg`
+            : 'https://placehold.co/600x400/f1f3f5/495057?text=Producto',
+        desc: asin
+            ? 'Producto importado desde el enlace de Amazon. Revisa la ficha original para consultar sus detalles actualizados.'
+            : 'Producto agregado desde un enlace externo.',
+        precio: 'Consultar en el sitio original',
+        rating: 'Calificación disponible en el sitio original'
+    };
+
+    try {
+        const respuesta = await fetch(`https://api.microlink.io?url=${encodeURIComponent(link)}&meta=true`);
+        if (!respuesta.ok) return datosBase;
+        const resultado = await respuesta.json();
+        const meta = resultado.data?.metadata || {};
+        return {
+            ...datosBase,
+            nombre: meta.title || datosBase.nombre,
+            imagen: meta.image?.url || datosBase.imagen,
+            desc: meta.description || datosBase.desc
+        };
+    } catch (error) {
+        console.warn('No se pudieron leer los metadatos del enlace:', error);
+        return datosBase;
+    }
+}
+
 async function cargarProductosDesdeFirebase() {
     try {
+        if (!usaFirebase) {
+            listaProductos = JSON.parse(localStorage.getItem(PRODUCTOS_LOCALES_KEY) || '[]');
+            generarFiltrosDinamicos();
+            aplicarFiltros();
+            return;
+        }
         const querySnapshot = await getDocs(collection(db, "productos"));
         listaProductos = [];
         querySnapshot.forEach((documento) => {
@@ -162,7 +203,12 @@ window.eliminarProducto = async function(id) {
     if (!isAdmin) return;
     if (confirm("¿Estás seguro de eliminar este producto?")) {
         try {
-            await deleteDoc(doc(db, "productos", id));
+            if (usaFirebase) {
+                await deleteDoc(doc(db, "productos", id));
+            } else {
+                const productosLocales = JSON.parse(localStorage.getItem(PRODUCTOS_LOCALES_KEY) || '[]');
+                localStorage.setItem(PRODUCTOS_LOCALES_KEY, JSON.stringify(productosLocales.filter(producto => producto.id !== id)));
+            }
             cargarProductosDesdeFirebase();
         } catch (e) {
             alert("Error al eliminar.");
@@ -257,7 +303,7 @@ function mostrarProductos(lista) {
             <div>
                 <span style="font-size: 12px; color: #666; font-weight: bold; text-transform: uppercase;">${p.subcategoria}</span>
                 <div class="product-img">
-                    <img src="${p.imagen}" alt="${p.nombre}">
+                    <img src="${p.imagen}" alt="${p.nombre}" onerror="this.src='https://placehold.co/600x400/f1f3f5/495057?text=Imagen+no+disponible'">
                 </div>
                 <h3 class="product-name">${p.nombre}</h3>
                 <div style="color: #de7921; font-size: 14px; margin-bottom: 5px;">${p.rating}</div>
