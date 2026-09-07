@@ -126,14 +126,13 @@ window.cerrarModalPublicar = function() {
 
 window.publicarProductoAutomatico = async function(event) {
     event.preventDefault();
-    const codigoProducto = document.getElementById('productHtml').value.trim();
+    const inputHtml = document.getElementById('productHtml');
+    if (!inputHtml) return;
+    
+    let codigoProducto = inputHtml.value.trim();
     if (!codigoProducto) return;
 
     const datosEnlace = obtenerDatosDesdeHtml(codigoProducto);
-    if (!datosEnlace.link) {
-        alert('El código HTML debe contener un enlace al producto.');
-        return;
-    }
     const productoGenerado = {
         nombre: datosEnlace.nombre,
         categoria: "Herramientas",
@@ -143,6 +142,7 @@ window.publicarProductoAutomatico = async function(event) {
         imagen: datosEnlace.imagen,
         desc: datosEnlace.desc,
         link: datosEnlace.link,
+        htmlPersonalizado: codigoProducto, // Guardamos el bloque completo de SiteStripe
         fechaCreacion: new Date().toISOString()
     };
 
@@ -307,22 +307,32 @@ function mostrarProductos(lista) {
         card.className = 'product-card';
         let botonEliminarHTML = isAdmin ? `<button class="delete-btn" onclick="eliminarProducto('${p.id}')">Eliminar Producto</button>` : '';
 
-        card.innerHTML = `
-            <div>
-                <span style="font-size: 12px; color: #666; font-weight: bold; text-transform: uppercase;">${p.subcategoria}</span>
-                <div class="product-img">
-                    <img src="${p.imagen}" alt="${p.nombre}" onerror="this.src='https://placehold.co/600x400/f1f3f5/495057?text=Imagen+no+disponible'">
+        // Si el producto tiene el HTML directo de SiteStripe, lo renderizamos tal cual
+        if (p.htmlPersonalizado) {
+            card.innerHTML = `
+                <div>${p.htmlPersonalizado}</div>
+                <div>${botonEliminarHTML}</div>
+            `;
+        } else {
+            // Estructura alternativa por si quedó algún producto viejo
+            card.innerHTML = `
+                <div>
+                    <span style="font-size: 12px; color: #666; font-weight: bold; text-transform: uppercase;">${p.subcategoria}</span>
+                    <div class="product-img">
+                        <img src="${p.imagen}" alt="${p.nombre}" onerror="this.src='https://placehold.co/600x400/f1f3f5/495057?text=Imagen+no+disponible'">
+                    </div>
+                    <h3 class="product-name">${p.nombre}</h3>
+                    <div style="color: #de7921; font-size: 14px; margin-bottom: 5px;">${p.rating}</div>
+                    <div class="product-price">${p.precio}</div>
+                    <p style="font-size: 13px; color: #555; line-height: 1.4;">${p.desc}</p>
                 </div>
-                <h3 class="product-name">${p.nombre}</h3>
-                <div style="color: #de7921; font-size: 14px; margin-bottom: 5px;">${p.rating}</div>
-                <div class="product-price">${p.precio}</div>
-                <p style="font-size: 13px; color: #555; line-height: 1.4;">${p.desc}</p>
-            </div>
-            <div>
-                <a href="${p.link}" target="_blank" rel="noopener noreferrer" class="amazon-btn">Ver producto</a>
-                ${botonEliminarHTML}
-            </div>
-        `;
+                <div>
+                    <a href="${p.link}" target="_blank" rel="noopener noreferrer" class="amazon-btn">Ver producto</a>
+                    ${botonEliminarHTML}
+                </div>
+            `;
+        }
         grid.appendChild(card);
     });
 }
+
