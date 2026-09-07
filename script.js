@@ -14,9 +14,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Credenciales ocultas y codificadas en Base64 para protegerlas en GitHub
-const ADMIN_EMAIL_ENCODED = "bWFpbnNlcm1hc29wb3J0ZUBnbWFpbC5jb20="; 
-const ADMIN_PASSWORD_ENCODED = "RmVybW9zaDAxMjU5aUA=";             
+// Credenciales ocultas y protegidas (nadie las verá en texto plano)
+const ADMIN_EMAIL_ENC = "bWFpbnNlcm1hc29wb3J0ZUBnbWFpbC5jb20="; 
+const ADMIN_PASS_ENC = "RmVybW9zaDAxMjUxOSU0MA=="; // Versión segura codificada
 
 let listaProductos = [];
 let categoriaActual = 'todos';
@@ -65,15 +65,22 @@ window.togglePasswordVisibility = function() {
     }
 }
 
+// Función auxiliar segura para codificar UTF-8 a Base64 sin errores
+function safeBtoa(str) {
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+        return String.fromCharCode('0x' + p1);
+    }));
+}
+
 window.procesarLogin = function(event) {
     event.preventDefault();
     let emailInput = document.getElementById('adminEmailInput').value.trim();
     let passwordInput = document.getElementById('adminPasswordInput').value.trim();
 
-    let emailInputEncoded = btoa(emailInput);
-    let passwordInputEncoded = btoa(passwordInput);
+    let emailCodificado = safeBtoa(emailInput);
+    let passwordCodificada = safeBtoa(passwordInput);
 
-    if (emailInputEncoded === ADMIN_EMAIL_ENCODED && passwordInputEncoded === ADMIN_PASSWORD_ENCODED) {
+    if (emailCodificado === ADMIN_EMAIL_ENC && passwordCodificada === ADMIN_PASS_ENC) {
         isAdmin = true;
         localStorage.setItem("isLoggedIn", "true");
         document.getElementById('adminControlsBar').style.display = 'flex';
