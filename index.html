@@ -78,11 +78,15 @@
             <h3>Publicar Producto</h3>
             <form id="productForm" onsubmit="publicarProductoAutomatico(event)">
                 <div class="form-group">
-                    <label for="linkProd">Enlace largo de Amazon:</label>
-                    <input type="url" id="linkProd" placeholder="https://www.amazon.com/.../dp/ASIN?tag=..." required>
+                    <label for="fullLinkProd">Enlace público del producto para extraer imagen:</label>
+                    <input type="url" id="fullLinkProd" placeholder="https://www.amazon.com/.../dp/ASIN" required>
+                </div>
+                <div class="form-group">
+                    <label for="affiliateLinkProd">Enlace de afiliado para el botón:</label>
+                    <input type="url" id="affiliateLinkProd" placeholder="https://amzn.to/..." required>
                 </div>
                 <div id="publishStatus" class="publish-status" role="status" aria-live="polite" hidden>
-                    <span>Analizando producto...</span>
+                    <span>Extrayendo datos y generando tarjeta...</span>
                     <div class="publish-progress"><span></span></div>
                 </div>
                 <div class="modal-buttons">
