@@ -126,13 +126,18 @@ window.cerrarModalPublicar = function() {
 
 window.publicarProductoAutomatico = async function(event) {
     event.preventDefault();
-    const inputHtml = document.getElementById('productHtml');
-    if (!inputHtml) return;
-    
-    let codigoProducto = inputHtml.value.trim();
-    if (!codigoProducto) return;
+    const inputLink = document.getElementById('linkProd');
+    if (!inputLink) return;
 
-    const datosEnlace = obtenerDatosDesdeHtml(codigoProducto);
+    const linkIngresado = inputLink.value.trim();
+    if (!linkIngresado) return;
+
+    const datosEnlace = await obtenerDatosDesdeEnlaceAmazon(linkIngresado);
+    if (!datosEnlace.asin) {
+        alert('El enlace no contiene un ASIN válido. Usa un enlace largo de Amazon con /dp/ o /gp/product/.');
+        return;
+    }
+
     const productoGenerado = {
         nombre: datosEnlace.nombre,
         categoria: "Herramientas",
@@ -141,8 +146,7 @@ window.publicarProductoAutomatico = async function(event) {
         rating: datosEnlace.rating,
         imagen: datosEnlace.imagen,
         desc: datosEnlace.desc,
-        link: datosEnlace.link,
-        htmlPersonalizado: codigoProducto, // Guardamos el bloque completo de SiteStripe
+        link: linkIngresado,
         fechaCreacion: new Date().toISOString()
     };
 
@@ -163,28 +167,48 @@ window.publicarProductoAutomatico = async function(event) {
     }
 }
 
-function obtenerDatosDesdeHtml(codigoHtml) {
-    const documento = new DOMParser().parseFromString(codigoHtml, 'text/html');
-    const enlace = documento.querySelector('a[href]');
-    const imagen = documento.querySelector('img[src]');
-    const textos = [...documento.querySelectorAll('p')]
-        .map(elemento => elemento.textContent.trim())
-        .filter(Boolean);
-    const precioEncontrado = textos.find(texto => /[$€£]|\d+[.,]\d{2}/.test(texto));
-    const nombre = textos.find(texto => texto !== precioEncontrado && !/comprar|ver producto/i.test(texto))
-        || imagen?.getAttribute('alt')?.trim()
-        || 'Producto compartido';
+function extraerAsin(link) {
+    try {
+        const url = new URL(link);
+        return url.pathname.match(/(?:\/dp\/|\/gp\/product\/|\/product\/)([A-Z0-9]{10})(?:[/?]|$)/i)?.[1]?.toUpperCase() || '';
+    } catch (error) {
+        return '';
+    }
+}
 
-    return {
-        link: enlace?.href || '',
-        nombre,
-        imagen: imagen?.src || 'https://placehold.co/600x400/f1f3f5/495057?text=Producto',
-        desc: textos
-            .filter(texto => texto !== nombre && texto !== precioEncontrado && !/comprar|ver producto/i.test(texto))
-            .join(' ') || nombre,
-        precio: precioEncontrado || 'Consultar en el sitio original',
+async function obtenerDatosDesdeEnlaceAmazon(link) {
+    const asin = extraerAsin(link);
+    const datosBase = {
+        asin,
+        nombre: asin ? `Producto Amazon ${asin}` : '',
+        imagen: asin
+            ? `https://images-na.ssl-images-amazon.com/images/P/${asin}.01.LZZZZZZZ.jpg`
+            : 'https://placehold.co/600x400/f1f3f5/495057?text=Producto',
+        desc: asin
+            ? 'Producto de Amazon. Consulta el enlace original para ver sus detalles actualizados.'
+            : '',
+        precio: 'Consultar en el sitio original',
         rating: 'Calificación disponible en el sitio original'
     };
+
+    if (!asin) return datosBase;
+
+    try {
+        const respuesta = await fetch(`https://api.microlink.io?url=${encodeURIComponent(link)}&meta=true`);
+        if (!respuesta.ok) return datosBase;
+        const resultado = await respuesta.json();
+        const meta = resultado.data?.metadata || {};
+        const imagenMeta = typeof meta.image === 'string' ? meta.image : meta.image?.url;
+        return {
+            ...datosBase,
+            nombre: meta.title || datosBase.nombre,
+            imagen: imagenMeta || datosBase.imagen,
+            desc: meta.description || meta.descriptionText || datosBase.desc
+        };
+    } catch (error) {
+        console.warn('No se pudieron leer los datos del enlace de Amazon:', error);
+        return datosBase;
+    }
 }
 
 async function cargarProductosDesdeFirebase() {
