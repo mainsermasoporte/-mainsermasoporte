@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo Industrial</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <div class="header-top">
+            <h1 class="main-title">Mantenimiento</h1>
+            <div id="authButtonContainer">
+                <button class="admin-access-btn" onclick="abrirModalLogin()" title="Panel de Administración">⚙️</button>
+            </div>
+        </div>
+
+        <div class="search-container">
+            <input type="text" id="searchInput" placeholder="Buscar..." oninput="filtrarProductos()">
+        </div>
+    </header>
+
+    <div class="categories-bar">
+        <nav class="categories-nav" id="mainCategories">
+            <button class="cat-btn active">📁 Todo el Catálogo</button>
+        </nav>
+    </div>
+
+    <div class="container">
+        <div id="adminControlsBar" class="admin-controls-bar" style="display: none;">
+            <span>Panel de Control Activo</span>
+            <button class="publish-trigger-btn" onclick="abrirModalPublicar()">+ Publicar Producto</button>
+        </div>
+
+        <div class="categories-nav" id="subcategoriesContainer"></div>
+
+        <h2 class="section-subtitle">Equipamiento Profesional y Consumibles de Uso Rudo</h2>
+
+        <div class="products-grid" id="productsGrid">
+            <p id="loadingText" style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px;">Cargando productos desde la base de datos...</p>
+        </div>
+    </div>
+
+    <footer>
+        <p>Cada producto presentado en este espacio se elige con la absoluta seguridad de ofrecerte lo necesario para garantizar un servicio eficiente y de alta calidad.</p>
+    </footer>
+
+    <!-- MODAL DE INICIO DE SESIÓN (ESTILO BONITO) -->
+    <div id="loginModal" class="custom-modal-overlay" style="display: none;">
+        <div class="custom-modal-content">
+            <h3>Panel de Administración</h3>
+            <form id="loginForm" onsubmit="procesarLogin(event)">
+                <div class="form-group">
+                    <label>Correo:</label>
+                    <input type="email" id="adminEmailInput" required placeholder="tucorreo@admin.com">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña:</label>
+                    <input type="password" id="adminPasswordInput" required placeholder="••••••••">
+                </div>
+                <div class="modal-buttons">
+                    <button type="submit" class="btn-entrar">Entrar</button>
+                    <button type="button" class="btn-cancelar" onclick="cerrarModalLogin()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL DE PUBLICACIÓN DE PRODUCTOS -->
+    <div id="publishModal" class="custom-modal-overlay" style="display: none;">
+        <div class="custom-modal-content">
+            <h3>Publicar Producto</h3>
+            <form id="productForm" onsubmit="publicarProductoAutomatico(event)">
+                <div class="form-group">
+                    <label>Link de Amazon:</label>
+                    <input type="url" id="linkProd" placeholder="https://amazon.com/..." required>
+                </div>
+                <div class="modal-buttons">
+                    <button type="submit" class="btn-publicar">Publicar</button>
+                    <button type="button" class="btn-cancelar" onclick="cerrarModalPublicar()">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
