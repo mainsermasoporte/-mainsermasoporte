@@ -127,23 +127,28 @@ window.cerrarModalPublicar = function() {
 
 window.publicarProductoAutomatico = async function(event) {
     event.preventDefault();
-    const inputFullLink = document.getElementById('fullLinkProd');
+    const inputTitle = document.getElementById('productTitle');
+    const inputImage = document.getElementById('productImage');
+    const inputDescription = document.getElementById('productDescription');
+    const inputPrice = document.getElementById('productPrice');
     const inputAffiliateLink = document.getElementById('affiliateLinkProd');
-    if (!inputFullLink || !inputAffiliateLink) return;
+    if (!inputTitle || !inputImage || !inputDescription || !inputPrice || !inputAffiliateLink) return;
 
-    const enlacePublico = inputFullLink.value.trim();
+    const titulo = inputTitle.value.trim();
+    const descripcion = inputDescription.value.trim();
+    const precio = inputPrice.value.trim();
     const enlaceAfiliado = inputAffiliateLink.value.trim();
-    if (!enlacePublico || !enlaceAfiliado) return;
+    const archivoImagen = inputImage.files?.[0];
+    if (!titulo || !descripcion || !precio || !archivoImagen || !enlaceAfiliado) return;
+
+    if (!archivoImagen.type.startsWith('image/')) {
+        alert('Selecciona un archivo de imagen válido.');
+        return;
+    }
 
     actualizarEstadoPublicacion(true);
 
     try {
-        const datosEnlace = await obtenerDatosDesdeEnlaceAmazon(enlacePublico);
-        if (!datosEnlace.asin) {
-            alert('El enlace no contiene un ASIN válido. Usa un enlace largo de Amazon.');
-            return;
-        }
-
         try {
             new URL(enlaceAfiliado);
         } catch (error) {
@@ -151,14 +156,15 @@ window.publicarProductoAutomatico = async function(event) {
             return;
         }
 
+        const imagenDataUrl = await leerImagenComoDataUrl(archivoImagen);
         const productoGenerado = {
-            nombre: datosEnlace.nombre,
+            nombre: titulo,
             categoria: "Herramientas",
             subcategoria: "Equipamiento Técnico",
-            precio: datosEnlace.precio,
-            rating: datosEnlace.rating,
-            imagen: datosEnlace.imagen,
-            desc: datosEnlace.desc,
+            precio,
+            rating: 'Calificación disponible en el sitio original',
+            imagen: imagenDataUrl,
+            desc: descripcion,
             link: enlaceAfiliado,
             fechaCreacion: new Date().toISOString()
         };
@@ -181,13 +187,22 @@ window.publicarProductoAutomatico = async function(event) {
     }
 }
 
+function leerImagenComoDataUrl(archivo) {
+    return new Promise((resolve, reject) => {
+        const lector = new FileReader();
+        lector.onload = () => resolve(lector.result);
+        lector.onerror = () => reject(new Error('No se pudo leer la imagen seleccionada.'));
+        lector.readAsDataURL(archivo);
+    });
+}
+
 function actualizarEstadoPublicacion(estaCargando) {
     const estado = document.getElementById('publishStatus');
     const boton = document.getElementById('publishButton');
     if (!estado || !boton) return;
     estado.hidden = !estaCargando;
     boton.disabled = estaCargando;
-    boton.textContent = estaCargando ? 'Analizando...' : 'Publicar';
+    boton.textContent = estaCargando ? 'Generando...' : 'Publicar';
 }
 
 function extraerAsin(link) {
@@ -381,14 +396,12 @@ function mostrarProductos(lista) {
             // Estructura alternativa por si quedó algún producto viejo
             card.innerHTML = `
                 <div>
-                    <span style="font-size: 12px; color: #666; font-weight: bold; text-transform: uppercase;">${p.subcategoria}</span>
+                    <h3 class="product-name">${p.nombre}</h3>
                     <div class="product-img">
                         <img src="${p.imagen}" alt="${p.nombre}" onerror="this.src='https://placehold.co/600x400/f1f3f5/495057?text=Imagen+no+disponible'">
                     </div>
-                    <h3 class="product-name">${p.nombre}</h3>
-                    <div style="color: #de7921; font-size: 14px; margin-bottom: 5px;">${p.rating}</div>
-                    <div class="product-price">${p.precio}</div>
                     <p style="font-size: 13px; color: #555; line-height: 1.4;">${p.desc}</p>
+                    <div class="product-price">${p.precio}</div>
                 </div>
                 <div>
                     <a href="${p.link}" target="_blank" rel="noopener noreferrer" class="amazon-btn">Ver producto</a>
