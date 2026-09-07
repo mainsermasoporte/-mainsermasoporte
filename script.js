@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// TU CONFIGURACIÓN DE FIREBASE (Usa tus credenciales reales aquí)
+// TU CONFIGURACIÓN DE FIREBASE
 const firebaseConfig = {
     apiKey: "TU_API_KEY",
     authDomain: "TU_AUTH_DOMAIN",
@@ -14,9 +14,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Credenciales ocultas y codificadas en Base64 para mayor seguridad en repositorios públicos
-const ADMIN_EMAIL_ENCODED = "bWFpbnNlcm1hc29wb3J0ZUBnbWFpbC5jb20="; // Tu correo codificado
-const ADMIN_PASSWORD_ENCODED = "RmVybW9zaDAxMjU5aUA=";             // Tu contraseña codificada
+// Credenciales ocultas y codificadas en Base64 para protegerlas en GitHub
+const ADMIN_EMAIL_ENCODED = "bWFpbnNlcm1hc29wb3J0ZUBnbWFpbC5jb20="; 
+const ADMIN_PASSWORD_ENCODED = "RmVybW9zaDAxMjU5aUA=";             
 
 let listaProductos = [];
 let categoriaActual = 'todos';
@@ -24,7 +24,6 @@ let subcategoriaActual = 'todos';
 let isAdmin = false;
 
 window.onload = function() {
-    // Verificar si ya estaba logueado en la sesión del navegador
     if (localStorage.getItem("isLoggedIn") === "true") {
         isAdmin = true;
         document.getElementById('adminControlsBar').style.display = 'flex';
@@ -49,6 +48,21 @@ window.abrirModalLogin = function() {
 window.cerrarModalLogin = function() {
     document.getElementById('loginModal').style.display = 'none';
     document.getElementById('loginForm').reset();
+    document.getElementById('adminPasswordInput').type = 'password';
+    document.getElementById('eyeBtn').innerText = '👁️';
+}
+
+// Función para el botón del "ojito"
+window.togglePasswordVisibility = function() {
+    let passwordInput = document.getElementById('adminPasswordInput');
+    let eyeBtn = document.getElementById('eyeBtn');
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        eyeBtn.innerText = '🙈';
+    } else {
+        passwordInput.type = 'password';
+        eyeBtn.innerText = '👁️';
+    }
 }
 
 window.procesarLogin = function(event) {
@@ -123,7 +137,6 @@ window.publicarProductoAutomatico = async function(event) {
     }
 }
 
-// Cargar productos de Firebase
 async function cargarProductosDesdeFirebase() {
     try {
         const querySnapshot = await getDocs(collection(db, "productos"));
@@ -150,7 +163,6 @@ window.eliminarProducto = async function(id) {
     }
 }
 
-// Filtros y Visualización
 function generarFiltrosDinamicos() {
     let nav = document.getElementById('mainCategories');
     nav.innerHTML = `<button class="cat-btn ${categoriaActual === 'todos' ? 'active' : ''}" onclick="seleccionarCategoria('todos', this)">📁 Todo el Catálogo</button>`;
