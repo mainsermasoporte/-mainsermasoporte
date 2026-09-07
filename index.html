@@ -3,44 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Equipo y Herramientas de Mantenimiento</title>
+    <title>MANTENIMIENTO - Catálogo Autorizado</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- Encabezado con Título Centrado y Buscador -->
+    <!-- Encabezado con Título, Buscador y Botón dinámico en la esquina derecha -->
     <header>
-        <div class="logo">MANTENIMIENTO</div>
-        <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Buscar herramienta, soplete, grasa..." onkeyup="filtrarProductos()">
+        <div class="header-top">
+            <div class="logo">MANTENIMIENTO</div>
+            <!-- Aquí cambia dinámicamente: aparece el engranaje ⚙️ o el botón de Cerrar Sesión 🚪 -->
+            <div id="authButtonContainer">
+                <button class="admin-access-btn" onclick="abrirModalLogin()" title="Panel de Administración">⚙️</button>
+            </div>
+        </div>
+        
+        <div class="search-container-center">
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Buscar herramienta, soplete, grasa..." onkeyup="filtrarProductos()">
+            </div>
         </div>
     </header>
 
-    <!-- Menú de Categorías Principales -->
+    <!-- Menú de Categorías Dinámicas -->
     <nav class="categories-nav" id="mainCategories">
         <button class="cat-btn active" onclick="seleccionarCategoria('todos', this)">🗂️ Todo el Catálogo</button>
-        <button class="cat-btn" onclick="seleccionarCategoria('Herramientas y Equipo', this)">🔧 Herramientas</button>
-        <button class="cat-btn" onclick="seleccionarCategoria('Consumos y Soldadura', this)">🔥 Consumibles y Gas</button>
-        <button class="cat-btn" onclick="seleccionarCategoria('Lubricación y Químicos', this)">🛢️ Lubricantes</button>
-        <button class="cat-btn" onclick="seleccionarCategoria('Medición y Diagnóstico', this)">⚡ Instrumentos</button>
-        <button class="cat-btn" onclick="seleccionarCategoria('Seguridad Industrial', this)">🛡️ EPP y Seguridad</button>
     </nav>
 
-    <!-- Contenedor de Subcategorías Dinámicas -->
+    <!-- Barra de Subcategorías Dinámicas -->
     <div class="subcategories-bar" id="subcategoriesContainer"></div>
 
     <!-- Contenido Principal -->
     <main>
+        <!-- Panel de Administración Oculto por defecto. Contiene el botón flotante interno para abrir la ventana de publicar -->
+        <div class="admin-controls-bar" id="adminControlsBar" style="display: none;">
+            <button class="open-modal-publish-btn" onclick="abrirModalPublicar()">➕ Publicar</button>
+        </div>
+
         <h1 class="section-title" id="sectionTitle">Equipamiento Profesional y Consumibles de Uso Rudo</h1>
 
-        <div class="products-grid" id="productsGrid"></div>
+        <!-- Cuadrícula de Tarjetas Oficiales -->
+        <div class="products-grid" id="productsGrid">
+            <p style="text-align: center; color: #666; width: 100%;">Cargando productos desde la base de datos...</p>
+        </div>
     </main>
 
-    <!-- Pie de Página con Aviso Legal OBLIGATORIO para Amazon -->
+    <!-- Ventana Emergente (Modal) para el Login (Sin quemar correos en el placeholder) -->
+    <div class="modal-overlay" id="loginModal" style="display: none;">
+        <div class="modal-content">
+            <h3>Acceso Restringido</h3>
+            <p>Introduce tu correo electrónico autorizado:</p>
+            <input type="email" id="correoInput" placeholder="nombre@correo.com">
+            <div class="modal-buttons">
+                <button onclick="verificarCorreo()" class="confirm-btn">Ingresar</button>
+                <button onclick="cerrarModalLogin()" class="cancel-btn">Cancelar</button>
+            </div>
+            <p id="errorLogin" style="color: red; font-size: 12px; margin-top: 10px; display: none;">Correo no autorizado.</p>
+        </div>
+    </div>
+
+    <!-- Ventana Emergente (Modal) compacta y ordenada para Publicar Producto -->
+    <div class="modal-overlay" id="publishModal" style="display: none;">
+        <div class="modal-content publish-modal-content">
+            <div class="modal-header-row">
+                <h3>Publicar Producto</h3>
+                <button class="close-x-btn" onclick="cerrarModalPublicar()">✕</button>
+            </div>
+            <p class="modal-sub">Pega el link de afiliado. El sistema extraerá los datos automáticamente.</p>
+            
+            <form id="productForm" onsubmit="publicarProductoAutomatico(event)">
+                <input type="url" id="linkProd" placeholder="https://amzn.to/..." required class="modal-url-input">
+                <button type="submit" class="publish-btn-clean">Publicar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Pie de Página -->
     <footer>
         <p><strong>Aviso de Divulgación:</strong> En calidad de Afiliado de Amazon, obtengo ingresos por las compras adscritas que cumplen los requisitos aplicables. Esto no representa ningún costo adicional para ti.</p>
     </footer>
 
-    <script src="script.js"></script>
+    <!-- Script principal -->
+    <script type="module" src="script.js"></script>
 </body>
 </html>
