@@ -39,7 +39,7 @@
         <h2 class="section-subtitle">Equipamiento Profesional y Consumibles de Uso Rudo</h2>
 
         <div class="products-grid" id="productsGrid">
-            <p id="loadingText" style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px;">Cargando productos...</p>
+            <p id="loadingText" style="grid-column: 1/-1; text-align: center; color: #666; padding: 40px;">Cargando productos desde la base de datos...</p>
         </div>
     </div>
 
@@ -78,8 +78,8 @@
             <h3>Publicar Producto</h3>
             <form id="productForm" onsubmit="publicarProductoAutomatico(event)">
                 <div class="form-group">
-                    <label>Link de Amazon:</label>
-                    <input type="url" id="linkProd" placeholder="https://amazon.com/..." required>
+                    <label for="productHtml">Código HTML del producto:</label>
+                    <textarea id="productHtml" rows="8" placeholder="Pega aquí el código HTML del producto" required></textarea>
                 </div>
                 <div class="modal-buttons">
                     <button type="submit" class="btn-publicar">Publicar</button>
