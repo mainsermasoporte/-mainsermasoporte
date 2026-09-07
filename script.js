@@ -1,5 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // TU CONFIGURACIÓN DE FIREBASE
 const firebaseConfig = {
@@ -13,12 +14,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 const usaFirebase = !Object.values(firebaseConfig).some(valor => valor.startsWith('TU_'));
 const PRODUCTOS_LOCALES_KEY = 'productosCatalogo';
-
-// Estas credenciales solo controlan la interfaz. Para seguridad real usa Firebase Auth.
-const ADMIN_EMAIL = "mainsermasoporte@gmail.com";
-const ADMIN_PASSWORD = "Fermosh012519@";
 
 let listaProductos = [];
 let categoriaActual = 'todos';
@@ -26,7 +24,7 @@ let subcategoriaActual = 'todos';
 let isAdmin = false;
 
 window.onload = function() {
-    if (localStorage.getItem("isLoggedIn") === "true") {
+    if (!usaFirebase && localStorage.getItem("isLoggedIn") === "true") {
         isAdmin = true;
         document.getElementById('adminControlsBar').style.display = 'flex';
         document.getElementById('authButtonContainer').innerHTML = `
@@ -51,32 +49,43 @@ window.cerrarModalLogin = function() {
     document.getElementById('loginModal').style.display = 'none';
     document.getElementById('loginForm').reset();
     document.getElementById('adminPasswordInput').type = 'password';
-    const eyeButton = document.getElementById('eyeBtn');
-    eyeButton.innerText = '👁️';
+    const eyeButton = document.querySelector('.toggle-password');
+    eyeButton.classList.remove('fa-eye');
+    eyeButton.classList.add('fa-eye-slash');
     eyeButton.setAttribute('aria-label', 'Mostrar contraseña');
+    eyeButton.setAttribute('title', 'Mostrar contraseña');
 }
 
 // Función para el botón del "ojito"
-window.togglePasswordVisibility = function() {
-    const passwordInput = document.getElementById('adminPasswordInput');
-    const eyeBtn = document.getElementById('eyeBtn');
+window.togglePasswordVisibility = function(iconElement) {
+    const passwordInput = iconElement.previousElementSibling;
     if (passwordInput.type === 'password') {
         passwordInput.type = 'text';
-        eyeBtn.innerText = '🙈';
-        eyeBtn.setAttribute('aria-label', 'Ocultar contraseña');
+        iconElement.classList.remove('fa-eye-slash');
+        iconElement.classList.add('fa-eye');
+        iconElement.setAttribute('aria-label', 'Ocultar contraseña');
+        iconElement.setAttribute('title', 'Ocultar contraseña');
     } else {
         passwordInput.type = 'password';
-        eyeBtn.innerText = '👁️';
-        eyeBtn.setAttribute('aria-label', 'Mostrar contraseña');
+        iconElement.classList.remove('fa-eye');
+        iconElement.classList.add('fa-eye-slash');
+        iconElement.setAttribute('aria-label', 'Mostrar contraseña');
+        iconElement.setAttribute('title', 'Mostrar contraseña');
     }
 }
 
-window.procesarLogin = function(event) {
+window.procesarLogin = async function(event) {
     event.preventDefault();
     const emailInput = document.getElementById('adminEmailInput').value.trim().toLowerCase();
     const passwordInput = document.getElementById('adminPasswordInput').value;
 
-    if (emailInput === ADMIN_EMAIL && passwordInput === ADMIN_PASSWORD) {
+    if (!usaFirebase) {
+        alert('Configura Firebase Authentication para activar el acceso administrativo.');
+        return;
+    }
+
+    try {
+        await signInWithEmailAndPassword(auth, emailInput, passwordInput);
         isAdmin = true;
         localStorage.setItem("isLoggedIn", "true");
         document.getElementById('adminControlsBar').style.display = 'flex';
@@ -85,14 +94,16 @@ window.procesarLogin = function(event) {
         `;
         cerrarModalLogin();
         mostrarProductos(listaProductos);
-    } else {
-        alert("Correo o contraseña incorrectos.");
+    } catch (error) {
+        console.error('Error de autenticación:', error);
+        alert('Correo o contraseña incorrectos.');
     }
 }
 
 window.cerrarSesionAdmin = function() {
     isAdmin = false;
     localStorage.removeItem("isLoggedIn");
+    if (usaFirebase) signOut(auth).catch(error => console.error('Error al cerrar sesión:', error));
     document.getElementById('adminControlsBar').style.display = 'none';
     document.getElementById('authButtonContainer').innerHTML = `
         <button class="admin-access-btn" onclick="abrirModalLogin()" title="Panel de Administración">⚙️</button>
@@ -167,11 +178,12 @@ async function obtenerDatosDesdeEnlace(link) {
         if (!respuesta.ok) return datosBase;
         const resultado = await respuesta.json();
         const meta = resultado.data?.metadata || {};
+        const imagenMeta = typeof meta.image === 'string' ? meta.image : meta.image?.url;
         return {
             ...datosBase,
             nombre: meta.title || datosBase.nombre,
-            imagen: meta.image?.url || datosBase.imagen,
-            desc: meta.description || datosBase.desc
+            imagen: imagenMeta || datosBase.imagen,
+            desc: meta.description || meta.descriptionText || datosBase.desc
         };
     } catch (error) {
         console.warn('No se pudieron leer los metadatos del enlace:', error);
