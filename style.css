@@ -238,6 +238,18 @@ header {
     box-sizing: border-box;
 }
 
+.form-group textarea {
+    width: 100%;
+    min-height: 150px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-sizing: border-box;
+    font-family: monospace;
+    font-size: 12px;
+    resize: vertical;
+}
+
 .input-group {
     position: relative;
     display: flex;
