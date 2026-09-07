@@ -122,6 +122,7 @@ window.abrirModalPublicar = function() {
 window.cerrarModalPublicar = function() {
     document.getElementById('publishModal').style.display = 'none';
     document.getElementById('productForm').reset();
+    actualizarEstadoPublicacion(false);
 }
 
 window.publicarProductoAutomatico = async function(event) {
@@ -132,25 +133,27 @@ window.publicarProductoAutomatico = async function(event) {
     const linkIngresado = inputLink.value.trim();
     if (!linkIngresado) return;
 
-    const datosEnlace = await obtenerDatosDesdeEnlaceAmazon(linkIngresado);
-    if (!datosEnlace.asin) {
-        alert('El enlace no contiene un ASIN válido. Usa un enlace largo de Amazon con /dp/ o /gp/product/.');
-        return;
-    }
-
-    const productoGenerado = {
-        nombre: datosEnlace.nombre,
-        categoria: "Herramientas",
-        subcategoria: "Equipamiento Técnico",
-        precio: datosEnlace.precio,
-        rating: datosEnlace.rating,
-        imagen: datosEnlace.imagen,
-        desc: datosEnlace.desc,
-        link: linkIngresado,
-        fechaCreacion: new Date().toISOString()
-    };
+    actualizarEstadoPublicacion(true);
 
     try {
+        const datosEnlace = await obtenerDatosDesdeEnlaceAmazon(linkIngresado);
+        if (!datosEnlace.asin) {
+            alert('El enlace no contiene un ASIN válido. Usa un enlace largo de Amazon con /dp/ o /gp/product/.');
+            return;
+        }
+
+        const productoGenerado = {
+            nombre: datosEnlace.nombre,
+            categoria: "Herramientas",
+            subcategoria: "Equipamiento Técnico",
+            precio: datosEnlace.precio,
+            rating: datosEnlace.rating,
+            imagen: datosEnlace.imagen,
+            desc: datosEnlace.desc,
+            link: linkIngresado,
+            fechaCreacion: new Date().toISOString()
+        };
+
         if (usaFirebase) {
             await addDoc(collection(db, "productos"), productoGenerado);
         } else {
@@ -164,7 +167,18 @@ window.publicarProductoAutomatico = async function(event) {
     } catch (e) {
         console.error("Error al guardar: ", e);
         alert("No se pudo publicar el producto.");
+    } finally {
+        actualizarEstadoPublicacion(false);
     }
+}
+
+function actualizarEstadoPublicacion(estaCargando) {
+    const estado = document.getElementById('publishStatus');
+    const boton = document.getElementById('publishButton');
+    if (!estado || !boton) return;
+    estado.hidden = !estaCargando;
+    boton.disabled = estaCargando;
+    boton.textContent = estaCargando ? 'Analizando...' : 'Publicar';
 }
 
 function extraerAsin(link) {
@@ -194,21 +208,38 @@ async function obtenerDatosDesdeEnlaceAmazon(link) {
     if (!asin) return datosBase;
 
     try {
-        const respuesta = await fetch(`https://api.microlink.io?url=${encodeURIComponent(link)}&meta=true`);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000);
+        const respuesta = await fetch(`https://api.microlink.io?url=${encodeURIComponent(link)}&meta=true`, { signal: controller.signal });
+        clearTimeout(timeout);
         if (!respuesta.ok) return datosBase;
         const resultado = await respuesta.json();
         const meta = resultado.data?.metadata || {};
         const imagenMeta = typeof meta.image === 'string' ? meta.image : meta.image?.url;
         return {
             ...datosBase,
-            nombre: meta.title || datosBase.nombre,
+            nombre: limpiarTitulo(meta.title) || datosBase.nombre,
             imagen: imagenMeta || datosBase.imagen,
-            desc: meta.description || meta.descriptionText || datosBase.desc
+            desc: limpiarDescripcion(meta.description || meta.descriptionText) || datosBase.desc
         };
     } catch (error) {
         console.warn('No se pudieron leer los datos del enlace de Amazon:', error);
         return datosBase;
     }
+}
+
+function limpiarTitulo(titulo) {
+    return String(titulo || '')
+        .replace(/^Amazon(?:\.com)?\s*:\s*/i, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function limpiarDescripcion(descripcion) {
+    return String(descripcion || '')
+        .replace(/^Amazon(?:\.com)?\s*:\s*/i, '')
+        .replace(/\s+/g, ' ')
+        .trim();
 }
 
 async function cargarProductosDesdeFirebase() {
@@ -359,4 +390,3 @@ function mostrarProductos(lista) {
         grid.appendChild(card);
     });
 }
-
