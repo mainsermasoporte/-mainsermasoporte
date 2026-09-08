@@ -1,5 +1,4 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // TU CONFIGURACIÓN DE FIREBASE
@@ -14,10 +13,9 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 const auth = getAuth(app);
-const usaFirebase = !Object.values(firebaseConfig).some(valor => valor.startsWith('TU_'));
 const PRODUCTOS_LOCALES_KEY = 'productosCatalogo';
+const MAX_PRODUCTOS = 100;
 const ADMIN_EMAIL = 'mainsermasoporte@gmail.com';
 
 let listaProductos = [];
@@ -25,7 +23,7 @@ let isAdmin = false;
 
 window.onload = function() {
     isAdmin = false;
-    cargarProductosDesdeFirebase();
+    cargarProductosDesdeAlmacenamientoLocal();
 };
 
 // Control del Modal de Login
@@ -65,11 +63,6 @@ window.togglePasswordVisibility = function(iconElement) {
 window.procesarLogin = async function(event) {
     event.preventDefault();
     const passwordInput = document.getElementById('adminPasswordInput').value;
-
-    if (!usaFirebase) {
-        alert('Configura Firebase Authentication para activar el acceso administrativo.');
-        return;
-    }
 
     try {
         await signInWithEmailAndPassword(auth, ADMIN_EMAIL, passwordInput);
@@ -124,7 +117,7 @@ window.publicarProductoAutomatico = async function(event) {
             return;
         }
 
-        const imagenDataUrl = await leerImagenComoDataUrl(archivoImagen);
+        const imagenDataUrl = await comprimirImagen(archivoImagen);
         const productoGenerado = {
             nombre: titulo,
             categoria: "Herramientas",
@@ -134,16 +127,16 @@ window.publicarProductoAutomatico = async function(event) {
             fechaCreacion: new Date().toISOString()
         };
 
-        if (usaFirebase) {
-            await addDoc(collection(db, "productos"), productoGenerado);
-        } else {
-            const productosLocales = JSON.parse(localStorage.getItem(PRODUCTOS_LOCALES_KEY) || '[]');
-            productosLocales.push({ id: crypto.randomUUID(), ...productoGenerado });
-            localStorage.setItem(PRODUCTOS_LOCALES_KEY, JSON.stringify(productosLocales));
+        const productosLocales = obtenerProductosLocales();
+        if (productosLocales.length >= MAX_PRODUCTOS) {
+            alert(`El catálogo admite un máximo de ${MAX_PRODUCTOS} productos.`);
+            return;
         }
+        productosLocales.push({ id: crypto.randomUUID(), ...productoGenerado });
+        guardarProductosLocales(productosLocales);
         alert("¡Producto publicado correctamente!");
         cerrarModalPublicar();
-        cargarProductosDesdeFirebase();
+        cargarProductosDesdeAlmacenamientoLocal();
     } catch (e) {
         console.error("Error al guardar: ", e);
         alert("No se pudo publicar el producto.");
@@ -152,10 +145,23 @@ window.publicarProductoAutomatico = async function(event) {
     }
 }
 
-function leerImagenComoDataUrl(archivo) {
+function comprimirImagen(archivo) {
     return new Promise((resolve, reject) => {
         const lector = new FileReader();
-        lector.onload = () => resolve(lector.result);
+        lector.onload = () => {
+            const imagen = new Image();
+            imagen.onload = () => {
+                const maxDimension = 1200;
+                const escala = Math.min(1, maxDimension / Math.max(imagen.width, imagen.height));
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.max(1, Math.round(imagen.width * escala));
+                canvas.height = Math.max(1, Math.round(imagen.height * escala));
+                canvas.getContext('2d').drawImage(imagen, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL('image/jpeg', 0.78));
+            };
+            imagen.onerror = () => reject(new Error('No se pudo procesar la imagen seleccionada.'));
+            imagen.src = lector.result;
+        };
         lector.onerror = () => reject(new Error('No se pudo leer la imagen seleccionada.'));
         lector.readAsDataURL(archivo);
     });
@@ -170,35 +176,36 @@ function actualizarEstadoPublicacion(estaCargando) {
     boton.textContent = estaCargando ? 'Generando...' : 'Publicar';
 }
 
-async function cargarProductosDesdeFirebase() {
+function obtenerProductosLocales() {
     try {
-        if (!usaFirebase) {
-            listaProductos = JSON.parse(localStorage.getItem(PRODUCTOS_LOCALES_KEY) || '[]');
-            aplicarFiltros();
-            return;
-        }
-        const querySnapshot = await getDocs(collection(db, "productos"));
-        listaProductos = [];
-        querySnapshot.forEach((documento) => {
-            listaProductos.push({ id: documento.id, ...documento.data() });
-        });
-        aplicarFiltros();
-    } catch (e) {
-        console.error("Error al cargar productos: ", e);
+        const productos = JSON.parse(localStorage.getItem(PRODUCTOS_LOCALES_KEY) || '[]');
+        return Array.isArray(productos) ? productos.slice(0, MAX_PRODUCTOS) : [];
+    } catch (error) {
+        console.error('No se pudo leer el catálogo local:', error);
+        return [];
     }
+}
+
+function guardarProductosLocales(productos) {
+    try {
+        localStorage.setItem(PRODUCTOS_LOCALES_KEY, JSON.stringify(productos.slice(0, MAX_PRODUCTOS)));
+    } catch (error) {
+        throw new Error('No hay espacio suficiente para guardar la imagen. Usa una imagen más pequeña.');
+    }
+}
+
+function cargarProductosDesdeAlmacenamientoLocal() {
+    listaProductos = obtenerProductosLocales();
+    aplicarFiltros();
 }
 
 window.eliminarProducto = async function(id) {
     if (!isAdmin) return;
     if (confirm("¿Estás seguro de eliminar este producto?")) {
         try {
-            if (usaFirebase) {
-                await deleteDoc(doc(db, "productos", id));
-            } else {
-                const productosLocales = JSON.parse(localStorage.getItem(PRODUCTOS_LOCALES_KEY) || '[]');
-                localStorage.setItem(PRODUCTOS_LOCALES_KEY, JSON.stringify(productosLocales.filter(producto => producto.id !== id)));
-            }
-            cargarProductosDesdeFirebase();
+            const productosLocales = obtenerProductosLocales();
+            guardarProductosLocales(productosLocales.filter(producto => producto.id !== id));
+            cargarProductosDesdeAlmacenamientoLocal();
         } catch (e) {
             alert("Error al eliminar.");
         }
