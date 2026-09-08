@@ -1,4 +1,18 @@
-const PRODUCTOS_LOCALES_KEY = 'productosCatalogo';
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, onSnapshot, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyAHWhdNlRPaKWieyRCui-YlN2cG-I5M7oI",
+    authDomain: "produc-main.firebaseapp.com",
+    projectId: "produc-main",
+    storageBucket: "produc-main.firebasestorage.app",
+    messagingSenderId: "713702451891",
+    appId: "1:713702451891:web:d64445524ed37486cf9ec6"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const PRODUCTOS_COLLECTION = 'productos';
 const MAX_PRODUCTOS = 100;
 const PASSWORD_KEY = 47;
 const ADMIN_PASSWORD = [105, 74, 93, 66, 64, 92, 71, 31, 30, 29, 26, 30, 22, 111]
@@ -7,10 +21,11 @@ const ADMIN_PASSWORD = [105, 74, 93, 66, 64, 92, 71, 31, 30, 29, 26, 30, 22, 111
 
 let listaProductos = [];
 let isAdmin = false;
+let detenerEscuchaProductos = null;
 
 window.onload = function() {
     isAdmin = false;
-    cargarProductosDesdeAlmacenamientoLocal();
+    cargarProductosDesdeFirestore();
 };
 
 // Control del Modal de Login
@@ -112,16 +127,15 @@ window.publicarProductoAutomatico = async function(event) {
             fechaCreacion: new Date().toISOString()
         };
 
-        const productosLocales = obtenerProductosLocales();
-        if (productosLocales.length >= MAX_PRODUCTOS) {
+        const productosActuales = await obtenerProductosFirestore();
+        if (productosActuales.length >= MAX_PRODUCTOS) {
             alert(`El catálogo admite un máximo de ${MAX_PRODUCTOS} productos.`);
             return;
         }
-        productosLocales.push({ id: crypto.randomUUID(), ...productoGenerado });
-        guardarProductosLocales(productosLocales);
+        await addDoc(collection(db, PRODUCTOS_COLLECTION), productoGenerado);
         alert("¡Producto publicado correctamente!");
         cerrarModalPublicar();
-        cargarProductosDesdeAlmacenamientoLocal();
+        await cargarProductosDesdeFirestore();
     } catch (e) {
         console.error("Error al guardar: ", e);
         alert("No se pudo publicar el producto.");
@@ -161,36 +175,36 @@ function actualizarEstadoPublicacion(estaCargando) {
     boton.textContent = estaCargando ? 'Generando...' : 'Publicar';
 }
 
-function obtenerProductosLocales() {
-    try {
-        const productos = JSON.parse(localStorage.getItem(PRODUCTOS_LOCALES_KEY) || '[]');
-        return Array.isArray(productos) ? productos.slice(0, MAX_PRODUCTOS) : [];
-    } catch (error) {
-        console.error('No se pudo leer el catálogo local:', error);
-        return [];
-    }
+async function obtenerProductosFirestore() {
+    const snapshot = await getDocs(collection(db, PRODUCTOS_COLLECTION));
+    return snapshot.docs.slice(0, MAX_PRODUCTOS).map(documento => ({
+        id: documento.id,
+        ...documento.data()
+    }));
 }
 
-function guardarProductosLocales(productos) {
-    try {
-        localStorage.setItem(PRODUCTOS_LOCALES_KEY, JSON.stringify(productos.slice(0, MAX_PRODUCTOS)));
-    } catch (error) {
-        throw new Error('No hay espacio suficiente para guardar la imagen. Usa una imagen más pequeña.');
-    }
-}
-
-function cargarProductosDesdeAlmacenamientoLocal() {
-    listaProductos = obtenerProductosLocales();
-    aplicarFiltros();
+async function cargarProductosDesdeFirestore() {
+    if (detenerEscuchaProductos) detenerEscuchaProductos();
+    detenerEscuchaProductos = onSnapshot(collection(db, PRODUCTOS_COLLECTION), snapshot => {
+        listaProductos = snapshot.docs.slice(0, MAX_PRODUCTOS).map(documento => ({
+            id: documento.id,
+            ...documento.data()
+        }));
+        aplicarFiltros();
+    }, error => {
+        console.error('No se pudo cargar el catálogo compartido:', error);
+        listaProductos = [];
+        aplicarFiltros();
+        alert('No se pudo conectar con el catálogo compartido. Revisa la conexión a internet.');
+    });
 }
 
 window.eliminarProducto = async function(id) {
     if (!isAdmin) return;
     if (confirm("¿Estás seguro de eliminar este producto?")) {
         try {
-            const productosLocales = obtenerProductosLocales();
-            guardarProductosLocales(productosLocales.filter(producto => producto.id !== id));
-            cargarProductosDesdeAlmacenamientoLocal();
+            await deleteDoc(doc(db, PRODUCTOS_COLLECTION, id));
+            await cargarProductosDesdeFirestore();
         } catch (e) {
             alert("Error al eliminar.");
         }
